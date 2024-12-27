@@ -43,7 +43,7 @@ struct Decrypt {
     input_file: String,
     /// The output file will store the decrypted data
     #[arg(short, long)]
-    output_file: String,
+    output_file: Option<String>,
 }
 
 fn read_password() -> Result<String> {
@@ -84,8 +84,12 @@ fn run() -> Result<()> {
             let json_str = String::from_utf8(data)?;
             let output: Output = serde_json::from_str(&json_str).unwrap();
             let decrypted_data = AESDecrypt::decrypt(&password, &output.crypto)?;
-            fs::write(&args.output_file, decrypted_data)?;
-            println!("wrote decrypted data to file {}", args.output_file);
+            if let Some(output_file) = &args.output_file {
+                fs::write(output_file, decrypted_data)?;
+                println!("wrote decrypted data to file {}", output_file);
+            } else {
+                println!("Ok!");
+            }
         }
     }
     Ok(())
