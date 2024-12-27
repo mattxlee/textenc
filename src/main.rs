@@ -62,7 +62,7 @@ fn read_password() -> Result<String> {
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
     // TODO check the password validity (length, cap letters, numbers etc)
-    Ok(input)
+    Ok(input.trim_end().to_owned())
 }
 
 #[derive(Serialize, Deserialize)]
@@ -116,6 +116,7 @@ fn run() -> Result<()> {
             let data = fs::read(args.input_file.clone())?;
             let json_str = String::from_utf8(data)?;
             let output: Output = serde_json::from_str(&json_str).unwrap();
+            println!("decrypt password: '{}'", password);
             let decrypted_data = AESDecrypt::decrypt(&password, &output.crypto)?;
             if let Some(output_file) = &args.output_file {
                 fs::write(output_file, decrypted_data)?;
