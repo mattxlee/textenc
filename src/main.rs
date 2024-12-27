@@ -23,14 +23,20 @@ enum Commands {
 
 #[derive(Parser)]
 struct Encrypt {
+    /// The file content will be read as the source data to be encrypted
     #[arg(short, long)]
     input_file: String,
+    /// The output file will store the encrypted data
+    #[arg(short, long)]
+    output_file: String,
 }
 
 #[derive(Parser)]
 struct Decrypt {
+    /// The file content will be read as the source data to be decrypted
     #[arg(short, long)]
     input_file: String,
+    /// The output file will store the decrypted data
     #[arg(short, long)]
     output_file: String,
 }
@@ -47,22 +53,23 @@ fn read_password() -> Result<String> {
 fn run() -> Result<()> {
     let cli = Cli::parse();
     match &cli.command {
-        Commands::Encrypt(encrypt) => {
+        Commands::Encrypt(args) => {
             let password = read_password()?;
-            let data = fs::read(&encrypt.input_file)?;
+            let data = fs::read(&args.input_file)?;
             let encrypt = AESEncrypt::new(32, 16);
             let crypto = encrypt.encrypt(&password, data.as_slice())?;
             let out_str = serde_json::to_string(&crypto).unwrap();
-            println!("{}", out_str);
+            fs::write(&args.output_file, out_str.as_bytes())?;
+            println!("wrote encrypted data to file {}", args.output_file);
         }
-        Commands::Decrypt(decrypt) => {
+        Commands::Decrypt(args) => {
             let password = read_password()?;
-            let data = fs::read(decrypt.input_file.clone())?;
+            let data = fs::read(args.input_file.clone())?;
             let json_str = String::from_utf8(data)?;
             let crypto: Crypto = serde_json::from_str(&json_str).unwrap();
             let decrypted_data = AESDecrypt::decrypt(&password, &crypto)?;
-            fs::write(&decrypt.output_file, decrypted_data)?;
-            println!("wrote decrypted data to file {}", decrypt.output_file);
+            fs::write(&args.output_file, decrypted_data)?;
+            println!("wrote decrypted data to file {}", args.output_file);
         }
     }
     Ok(())
