@@ -8,13 +8,27 @@ Run `textenc --help` to get help information.
 
 ## Encrypt
 
-Follow the steps to encrypt your file.
+Follow the steps to encrypt your file and enter your password.
 
 1. Run `textenc encrypt --input-file ./hello.txt --output-file ./encrypted.json`
 
 2. Enter the password
 
 3. Done. The file `encrypted.json` will store the encrypted data with required parameters
+
+**Password generation**
+
+You can also use the `-g` option to generate a new password. When the encryption is complete, the `uuid` and the generated password will be printed to the console. Make sure to write down the password and keep it safe.
+
+Example:
+
+```sh
+textenc encrypt --input-file ./hello.txt --output-file ./encrypted.json -g
+```
+
+**Verification**
+
+After encryption, the program will immediately decrypt the output data and compare it to the source data to verify the encryption's accuracy. The result will be printed to the console. You can disable this verification process by using the `--verify=false` option, but it is highly recommended to keep it enabled.
 
 ## Decrypt
 
