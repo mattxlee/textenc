@@ -37,6 +37,8 @@ pub struct Crypto {
     mac: String,
 }
 
+const BLOCK_SIZE: u32 = 16;
+
 pub struct Encrypt {
     dklen: usize,
     log_n: u8,
@@ -56,7 +58,7 @@ impl Encrypt {
 
     pub fn encrypt(&self, password: &str, data: &[u8]) -> Result<Crypto> {
         // make key first
-        let key = make_key(password, &self.salt, self.log_n, 8, 1, self.dklen)?;
+        let key = make_key(password, &self.salt, self.log_n, BLOCK_SIZE, 1, self.dklen)?;
         // prepare content
         let mut content = vec![];
         content.extend_from_slice(data);
@@ -74,7 +76,7 @@ impl Encrypt {
                 salt: hex::encode(&self.salt),
                 log_n: self.log_n,
                 n: 2_u32.pow(self.log_n as u32),
-                r: 8,
+                r: BLOCK_SIZE,
                 p: 1,
             },
             cipher: "aes-128-ctr".to_owned(),
