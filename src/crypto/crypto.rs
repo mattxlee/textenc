@@ -17,6 +17,7 @@ pub struct KdfParams {
     dklen: usize,
     salt: String,
     log_n: u8,
+    n: u32,
     r: u32,
     p: u32,
 }
@@ -72,6 +73,7 @@ impl Encrypt {
                 dklen: self.dklen,
                 salt: hex::encode(&self.salt),
                 log_n: self.log_n,
+                n: 2_u32.pow(self.log_n as u32),
                 r: 8,
                 p: 1,
             },
