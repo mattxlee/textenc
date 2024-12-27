@@ -1,16 +1,11 @@
 use std::io::Write;
 use std::{fs, io};
 
-use aes::cipher::{KeyIvInit, StreamCipher};
-use aes::Aes128;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use ctr::Ctr128BE;
-use scrypt::{
-    password_hash::rand_core::{OsRng, RngCore},
-    scrypt,
-};
-use serde::{Deserialize, Serialize};
+mod crypto;
+
+use crypto::prelude::*;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -24,7 +19,6 @@ struct Cli {
 enum Commands {
     Encrypt(Encrypt),
     Decrypt(Decrypt),
-    Verify(Verify),
 }
 
 #[derive(Parser)]
@@ -37,35 +31,8 @@ struct Encrypt {
 struct Decrypt {
     #[arg(short, long)]
     input_file: String,
-}
-
-#[derive(Parser)]
-struct Verify {
     #[arg(short, long)]
-    input_file: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct KdfParams {
-    dklen: u32,
-    salt: String,
-    n: u32,
-    r: u32,
-    p: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-struct CipherParams {
-    iv: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Crypto {
-    kdf: String,
-    kdfparams: KdfParams,
-    cipher: String,
-    ciphertext: String,
-    cipherparams: CipherParams,
+    output_file: String,
 }
 
 fn read_password() -> Result<String> {
@@ -82,41 +49,21 @@ fn run() -> Result<()> {
     match &cli.command {
         Commands::Encrypt(encrypt) => {
             let password = read_password()?;
-            // create password
-            let mut salt = [0u8; 16];
-            OsRng.fill_bytes(&mut salt);
-            let params = scrypt::Params::new(16, 8, 1, 16).unwrap();
-            let mut key = [0u8; 16];
-            scrypt(password.as_bytes(), &salt, &params, &mut key)?;
-            // create iv
-            let mut iv = [0u8; 16];
-            OsRng.fill_bytes(&mut iv);
-            type Aes128Ctr = Ctr128BE<Aes128>;
-            // read source from file
-            let mut content = fs::read(&encrypt.input_file)?;
-            let mut aes = Aes128Ctr::new(&key.into(), &iv.into());
-            aes.apply_keystream(&mut content);
-            // write to file
-            let crypto = Crypto {
-                kdf: "scrypt".to_owned(),
-                kdfparams: KdfParams {
-                    dklen: 16,
-                    salt: hex::encode(&salt),
-                    n: 2_u32.pow(16),
-                    r: 8,
-                    p: 1,
-                },
-                cipher: "aes-128-ctr".to_owned(),
-                ciphertext: hex::encode(&content),
-                cipherparams: CipherParams {
-                    iv: hex::encode(&iv),
-                },
-            };
+            let data = fs::read(&encrypt.input_file)?;
+            let encrypt = AESEncrypt::new(32, 16);
+            let crypto = encrypt.encrypt(&password, data.as_slice())?;
             let out_str = serde_json::to_string(&crypto).unwrap();
             println!("{}", out_str);
         }
-        Commands::Decrypt(decrypt) => todo!(),
-        Commands::Verify(verify) => todo!(),
+        Commands::Decrypt(decrypt) => {
+            let password = read_password()?;
+            let data = fs::read(decrypt.input_file.clone())?;
+            let json_str = String::from_utf8(data)?;
+            let crypto: Crypto = serde_json::from_str(&json_str).unwrap();
+            let decrypted_data = AESDecrypt::decrypt(&password, &crypto)?;
+            fs::write(&decrypt.output_file, decrypted_data)?;
+            println!("wrote decrypted data to file {}", decrypt.output_file);
+        }
     }
     Ok(())
 }
