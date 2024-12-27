@@ -41,6 +41,9 @@ struct Encrypt {
     /// The output file will store the encrypted data
     #[arg(short, long)]
     output_file: String,
+    /// Verify the encrypted data before exit
+    #[arg(short, long, default_value_t = true)]
+    verify: bool,
 }
 
 #[derive(Parser)]
@@ -92,6 +95,21 @@ fn run() -> Result<()> {
             let out_str = serde_json::to_string_pretty(&output).unwrap();
             fs::write(&args.output_file, out_str.as_bytes())?;
             println!("wrote encrypted data to file {}", args.output_file);
+            if args.generate_password {
+                println!("uuid: {}\npassword: {}", output.id, password);
+            }
+            if args.verify {
+                let decrypted_data = AESDecrypt::decrypt(&password, &output.crypto)?;
+                let verified = decrypted_data == data;
+                println!(
+                    "Verify result: {}",
+                    if verified {
+                        "verified"
+                    } else {
+                        "cannot verify"
+                    }
+                );
+            }
         }
         Commands::Decrypt(args) => {
             let password = read_password()?;
