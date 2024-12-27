@@ -7,6 +7,7 @@ use uuid::Uuid;
 mod crypto;
 
 use crypto::prelude::*;
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
 #[derive(Parser)]
@@ -25,6 +26,12 @@ enum Commands {
 
 #[derive(Parser)]
 struct Encrypt {
+    /// Generate a password
+    #[arg(short, long, default_value_t = false)]
+    generate_password: bool,
+    /// Setup the length of the new generated password
+    #[arg(long, default_value_t = 20)]
+    password_length: u32,
     /// The description for the output file
     #[arg(short, long, default_value = "modify the description")]
     description: String,
@@ -66,7 +73,15 @@ fn run() -> Result<()> {
     let cli = Cli::parse();
     match &cli.command {
         Commands::Encrypt(args) => {
-            let password = read_password()?;
+            let password = if args.generate_password {
+                rand::thread_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(args.password_length as usize)
+                    .map(char::from)
+                    .collect()
+            } else {
+                read_password()?
+            };
             let data = fs::read(&args.input_file)?;
             let encrypt = AESEncrypt::new(32, 16);
             let output = Output {
