@@ -154,4 +154,14 @@ mod tests {
         let decrypted_str = String::from_utf8(decrypted_data).unwrap();
         assert_eq!(decrypted_str, PLAIN_TEXT);
     }
+
+    #[test]
+    fn test_crypto_32() {
+        const PLAIN_TEXT: &str = "hello world!";
+        let encrypt = Encrypt::new(32, 16);
+        let res = encrypt.encrypt("123", PLAIN_TEXT.as_bytes()).unwrap();
+        let decrypted_data = Decrypt::decrypt("123", &res).unwrap();
+        let decrypted_str = String::from_utf8(decrypted_data).unwrap();
+        assert_eq!(decrypted_str, PLAIN_TEXT);
+    }
 }
