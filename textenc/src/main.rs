@@ -4,11 +4,12 @@ use std::{fs, io};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
-mod crypto;
 
-use crypto::prelude::*;
-use rand::{distributions::Alphanumeric, Rng};
+use textenclib;
+
+use rand::{distr::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
+use textenclib::prelude::*;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -77,7 +78,7 @@ fn run() -> Result<()> {
     match &cli.command {
         Commands::Encrypt(args) => {
             let password = if args.generate_password {
-                rand::thread_rng()
+                rand::rng()
                     .sample_iter(&Alphanumeric)
                     .take(args.password_length as usize)
                     .map(char::from)
