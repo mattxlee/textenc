@@ -505,6 +505,7 @@ dependencies = [
 [[package]]
 name = "textenclib"
 version = "0.1.0"
+source = "git+https://github.com/mattxlee/textenclib#63f8b44070c7ca5a09d21dcfd8fde3a970c46d0b"
 dependencies = [
  "aes",
  "anyhow",

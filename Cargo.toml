@@ -1,5 +1,5 @@
 [workspace]
 members = [
     "textenc"
-, "textenclib"]
+]
 resolver = "2"
